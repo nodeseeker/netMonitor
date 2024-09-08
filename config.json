@@ -1,0 +1,27 @@
+{
+  "device": "example.com",
+  "interface": "enp3s0",
+  "interval": 600,
+  "start_day": 10,
+  "statistics": {
+    "total_receive": 0,
+    "total_transmit": 0,
+    "last_receive": 0,
+    "last_transmit": 0,
+    "last_reset": "2024-08-10"
+  },
+  "comparison": {
+    "category": "upload+download",
+    "limit": 10,
+    "threshold": 0.85,
+    "ratio": 0.95
+  },
+  "message": {
+    "telegram": {
+      "threshold_status": false,
+      "ratio_status": false,
+      "token": "1234567890:ASDFGHJKLQWERTYUIOP",
+      "chat_id": "1234567890"
+    }
+  }
+}

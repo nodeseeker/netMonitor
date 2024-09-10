@@ -49,9 +49,9 @@ fi
 
 # 创建文件夹和文件
 echo "创建文件夹和文件..."
+mkdir -p /opt/NetMonitor
 
 if [ "$choice" == "1" ]; then
-    mkdir -p /opt/NetMonitor
     touch /opt/NetMonitor/error.log /opt/NetMonitor/output.log
     chmod 666 /opt/NetMonitor/error.log /opt/NetMonitor/output.log
 fi

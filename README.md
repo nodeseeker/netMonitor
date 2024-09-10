@@ -10,31 +10,50 @@
 
 
 ## 使用教程
-### 下载与重命名
-
-浏览器打开程序的发布页 [https://github.com/nodeseeker/netMonitor/releases](https://github.com/nodeseeker/netMonitor/releases)，在列表中找到对应CPU架构（如下图），比如x86_64的Linux系统，下载`netmonitor-linux-amd64`，而aarch64/arm64的Linux系统，则下载`netmonitor-linux-arm64`。
-
-随后将程序重命名为`netmonitor`，Linux命令为`mv netmonitor-linux-* netmonitor`
-
-![releases_example](https://raw.githubusercontent.com/nodeseeker/netMonitor/main/assets/netMonitor_releases.jpg)
 
 
+### 一键安装脚本
 
-## 文件夹与路径
-
-新建一个文件夹用于储存程序和相关配置文件，以`/opt/`为例：
+使用root权限执行以下命令进行安装：
 
 ```
-mkdir -p /opt/NetMonitor # 新建文件夹
-mv netmonitor /opt/NetMonitor # 将持续移动到目标文件夹中
-touch error.log # 新建文件用于储存可能出现的错误消息
-touch output.log # 新建文件用于储存可能出现的日志信息
-touch config.json # 新建配置文件
+wget -qO- https://raw.githubusercontent.com/nodeseeker/netMonitor/main/installation.sh -O installation.sh && chmod +x installation.sh && ./installation.sh
+```
+
+### 消息提醒示例
+
+telegram的机器人将发生以下提示消息：
+
+```
+[test.example.com]流量提醒：当前使用量为 170.00 GB，超过了设置的85%阈值
+[test.example.com]关机警告：当前使用量 190 GB，超过了限制的95%，即将关机！
+```
+
+### 运行情况示例
+
+程序运行状态通过`systemd status netmonitor`命令查看
+
+```
+● netmonitor.service - Network Bandwidth Monitor
+     Loaded: loaded (/etc/systemd/system/netmonitor.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2024-09-08 21:02:50 CST; 20h ago
+   Main PID: 4146349 (netmonitor)
+      Tasks: 3 (limit: 537)
+     Memory: 840.0K
+        CPU: 2ms
+     CGroup: /system.slice/netmonitor.service
+             └─4146349 /opt/NetMonitor/netmonitor -c /opt/NetMonitor/config.json
+
+Sep 08 21:02:50 test.example.com systemd[1]: Started netmonitor.service - Network Bandwidth Monitor.
 ```
 
 
 
-## 配置文件
+程序的运行记录在`/opt/NetMonitor/output.log`中；如果出现运行错误，将储存在`/opt/NetMonitor/error.log`中。
+
+
+
+### 配置文件详解
 
 在`/opt/NetMonitor`文件夹下，使用vim/nano或者任意编辑器，填写下面内容到`config.json`配置文件中。
 
@@ -93,6 +112,50 @@ touch config.json # 新建配置文件
 
 
 
+## 常见问题
+
+### 其他CPU架构
+
+纯`golang`实现，适配所有`golang`支持的CPU架构上，例如：龙芯loong64，RISC-V（64位）等，只需自行编译。以下为编译示例：
+
+```
+CGO_ENABLED=0 GOOS=linux GOARCH=loong64 go build -trimpath -ldflags="-w -s" -o netmonitor-linux-loong64 main.go # 编译适配于龙芯CPU的Linux系统
+CGO_ENABLED=0 GOOS=linux GOARCH=riscv64 go build -trimpath -ldflags="-w -s" -o netmonitor-linux-riscv64 ../src/main.go # 编译适配于64位RISC-V CPU的Linux系统
+```
+
+### 其他系统
+
+程序读取`/proc/net/dev`信息进行统计，理论上支持Unix系统的部分发行版，例如`freeBSD`等。家穷，用不起BSD或者MacOS，故没有编译程序也没有做适配。
+
+
+## 手动安装教程
+
+### 下载与重命名
+
+浏览器打开程序的发布页 [https://github.com/nodeseeker/netMonitor/releases](https://github.com/nodeseeker/netMonitor/releases)，在列表中找到对应CPU架构（如下图），比如x86_64的Linux系统，下载`netmonitor-linux-amd64`，而aarch64/arm64的Linux系统，则下载`netmonitor-linux-arm64`。
+
+随后将程序重命名为`netmonitor`，Linux命令为`mv netmonitor-linux-* netmonitor`
+
+![releases_example](https://raw.githubusercontent.com/nodeseeker/netMonitor/main/assets/netMonitor_releases.jpg)
+
+
+
+## 文件夹与路径
+
+新建一个文件夹用于储存程序和相关配置文件，以`/opt/`为例：
+
+```
+mkdir -p /opt/NetMonitor # 新建文件夹
+mv netmonitor /opt/NetMonitor # 将持续移动到目标文件夹中
+touch error.log # 新建文件用于储存可能出现的错误消息
+touch output.log # 新建文件用于储存可能出现的日志信息
+touch config.json # 新建配置文件
+```
+
+
+
+
+
 ## 开机自启动
 
 新建一个systemctl的文件：
@@ -137,44 +200,3 @@ systemctl status netmonitor # 查看程序运行状态
 
 
 
-## 运行情况示例
-
-程序运行状态查看
-
-```
-● netmonitor.service - Network Bandwidth Monitor
-     Loaded: loaded (/etc/systemd/system/netmonitor.service; enabled; preset: enabled)
-     Active: active (running) since Sun 2024-09-08 21:02:50 CST; 20h ago
-   Main PID: 4146349 (netmonitor)
-      Tasks: 3 (limit: 537)
-     Memory: 840.0K
-        CPU: 2ms
-     CGroup: /system.slice/netmonitor.service
-             └─4146349 /opt/NetMonitor/netmonitor -c /opt/NetMonitor/config.json
-
-Sep 08 21:02:50 test.example.com systemd[1]: Started netmonitor.service - Network Bandwidth Monitor.
-```
-
-消息提醒
-
-```
-[test.example.com]流量提醒：当前使用量为 170.00 GB，超过了设置的85%阈值
-[test.example.com]关机警告：当前使用量 190 GB，超过了限制的95%，即将关机！
-```
-
-
-
-### 常见问题
-
-#### 其他CPU架构
-
-纯`golang`实现，适配所有`golang`支持的CPU架构上，例如：龙芯loong64，RISC-V（64位）等，只需自行编译。以下为编译示例：
-
-```
-CGO_ENABLED=0 GOOS=linux GOARCH=loong64 go build -trimpath -ldflags="-w -s" -o netmonitor-linux-loong64 main.go # 编译适配于龙芯CPU的Linux系统
-CGO_ENABLED=0 GOOS=linux GOARCH=riscv64 go build -trimpath -ldflags="-w -s" -o netmonitor-linux-riscv64 ../src/main.go # 编译适配于64位RISC-V CPU的Linux系统
-```
-
-#### 其他系统
-
-程序读取`/proc/net/dev`信息进行统计，理论上支持Unix系统的部分发行版，例如`freeBSD`等。家穷，用不起BSD或者MacOS，故没有编译程序也没有做适配。

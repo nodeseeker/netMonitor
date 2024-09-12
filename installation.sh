@@ -34,6 +34,8 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
             exit 1
             ;;
     esac
+else
+        choice="1"  # 第一次安装时设置默认值
 fi
 
 # 检查依赖curl和wget是否已经安装，如果没有，则安装。适配Debian和RedHat系列发行版。

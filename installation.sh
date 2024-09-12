@@ -16,11 +16,13 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
     case $choice in
         1)
             systemctl stop netmonitor
+            systemctl disable netmonitor
             rm -rf /opt/NetMonitor
             rm -f /etc/systemd/system/netmonitor.service
             ;;
         2)
             systemctl stop netmonitor
+            systemctl disable netmonitor
             rm -f /opt/NetMonitor/netmonitor
             ;;
         3)

@@ -34,8 +34,6 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
             exit 1
             ;;
     esac
-else
-    choice="1"  # 第一次安装时设置默认值
 fi
 
 # 检查依赖curl和wget是否已经安装，如果没有，则安装。适配Debian和RedHat系列发行版。
@@ -81,6 +79,7 @@ if [ "$choice" != "2" ]; then
     echo "创建配置文件..."
     read -p "请输入设备名称：" device_name
 
+
     # 获取所有网卡名称
     network_interfaces=($(ls /sys/class/net | grep -v lo))
     default_interface=${network_interfaces[0]}
@@ -111,11 +110,12 @@ if [ "$choice" != "2" ]; then
         exit 1
     fi
 
-    read -p "请选择流量统计方式，仅输入数字：1. 单向上传 2. 单向下载 3. 双向计算：" traffic_type
+    read -p "请选择流量统计方式，仅输入数字：1. 单向上传 2. 单向下载 3. 双向计算 4. 任意最大值：" traffic_type
     case $traffic_type in
         1) traffic_type="upload" ;;
         2) traffic_type="download" ;;
         3) traffic_type="upload+download" ;;
+        4) traffic_type="anymax" ;;
         *) echo "无效的输入"; exit 1 ;;
     esac
 

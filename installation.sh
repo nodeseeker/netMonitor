@@ -72,7 +72,7 @@ echo "下载地址：$download_url"
 wget -O netmonitor $download_url
 chmod +x netmonitor
 
-if [ "$choice" = "2" ]; then
+if [ "$choice" != "2" ]; then
     # 创建配置文件
     echo "创建配置文件..."
     read -p "请输入设备名称：" device_name

@@ -32,6 +32,8 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
             exit 1
             ;;
     esac
+else
+    choice="1"  # 第一次安装时设置默认值
 fi
 
 # 检查依赖curl和wget是否已经安装，如果没有，则安装。适配Debian和RedHat系列发行版。
@@ -76,7 +78,6 @@ if [ "$choice" != "2" ]; then
     # 创建配置文件
     echo "创建配置文件..."
     read -p "请输入设备名称：" device_name
-
 
     # 获取所有网卡名称
     network_interfaces=($(ls /sys/class/net | grep -v lo))

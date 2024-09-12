@@ -49,9 +49,9 @@ fi
 
 # 创建文件夹和文件
 echo "创建文件夹和文件..."
-mkdir -p /opt/NetMonitor
 
-if [ "$choice" == "1" ]; then
+if [ "$choice" != "2" ]; then
+    mkdir -p /opt/NetMonitor
     touch /opt/NetMonitor/error.log /opt/NetMonitor/output.log
     chmod 666 /opt/NetMonitor/error.log /opt/NetMonitor/output.log
 fi
@@ -72,7 +72,7 @@ echo "下载地址：$download_url"
 wget -O netmonitor $download_url
 chmod +x netmonitor
 
-if [ "$choice" == "1" ]; then
+if [ "$choice" = "2" ]; then
     # 创建配置文件
     echo "创建配置文件..."
     read -p "请输入设备名称：" device_name
@@ -155,7 +155,7 @@ fi
 
 # 创建systemd服务
 echo "创建systemd服务文件..."
-if [ "$choice" == "1" ]; then
+if [ "$choice" != "2" ]; then
     # 创建systemd服务
     echo "创建systemd服务文件..."
     cat <<EOL > /etc/systemd/system/netmonitor.service

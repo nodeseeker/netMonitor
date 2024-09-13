@@ -12,7 +12,8 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
     echo "1. 删除并重新安装"
     echo "2. 升级并保留配置文件"
     echo "3. 退出安装"
-    read -p "请输入选项（1/2/3）：" choice
+    echo "4. 删除NetMonitor"
+    read -p "请输入选项（1/2/3/4）：" choice
     case $choice in
         1)
             systemctl stop netmonitor
@@ -28,6 +29,14 @@ if [ -d "/opt/NetMonitor" ] || [ -f "/etc/systemd/system/netmonitor.service" ]; 
         3)
             echo "退出安装"
             exit 1
+            ;;
+        4)
+            systemctl stop netmonitor
+            systemctl disable netmonitor
+            rm -rf /opt/NetMonitor
+            rm -f /etc/systemd/system/netmonitor.service
+            echo "NetMonitor已删除"
+            exit 0
             ;;
         *)
             echo "无效的选项，退出安装"

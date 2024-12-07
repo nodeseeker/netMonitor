@@ -30,7 +30,8 @@ type Statistics struct {
 	TotalTransmit uint64 `json:"total_transmit"`
 	LastReceive   uint64 `json:"last_receive"`
 	LastTransmit  uint64 `json:"last_transmit"`
-	LastReset     string `json:"last_reset"` // 新增字段，用于存储上次重置的时间
+	LastReset     string `json:"last_reset"`    // 新增字段，用于存储上次重置的时间
+	ShutdownFlag  bool   `json:"shutdown_flag"` // 新增字段，用于记录关机操作
 }
 
 type Comparison struct {
@@ -150,6 +151,8 @@ func resetStatistics(config *Config, configFilePath string) {
 	config.Message.Telegram.ThresholdStatus = false
 	config.Message.Telegram.RatioStatus = false
 
+	config.Statistics.ShutdownFlag = false // 重置关机标志
+
 	// Save the reset config
 	//err := saveConfig("config.json", *config)
 	if err := saveConfig(configFilePath, *config); err != nil {
@@ -209,6 +212,10 @@ func performComparison(config *Config, configFilePath string) error {
 
 	// Check for shutdown warning and send message if needed
 	if valueInGB >= ratioLimit && !config.Message.Telegram.RatioStatus {
+		// 如果关机标志已经设置，则不再发送关机消息
+		if config.Statistics.ShutdownFlag {
+			return nil
+		}
 		//fmt.Println("大于比率，发送消息")
 		message := fmt.Sprintf("关机警告：当前使用量 %.2f GB，超过了限制的%.0f%%，即将关机！", valueInGB, config.Comparison.Ratio*100)
 		if err := sendTelegramMessage(config.Message.Telegram.Token, config.Message.Telegram.ChatID, message, config.Device); err != nil {
@@ -216,6 +223,8 @@ func performComparison(config *Config, configFilePath string) error {
 		} else {
 			//fmt.Println("警告发送成功，修改状态")
 			config.Message.Telegram.RatioStatus = true // Mark ratio status as true after sending
+
+			config.Statistics.ShutdownFlag = true // 设置关机标志
 
 			// Save the updated config to the file
 			//err = saveConfig("config.json", *config)

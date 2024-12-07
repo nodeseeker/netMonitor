@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+const (
+	bytesToGB       = 1024 * 1024 * 1024
+	defaultInterval = 600
+	dateFormat      = "2006-01-02"
+)
+
 type NetStats struct {
 	ReceiveBytes  uint64 `json:"receive_bytes"`
 	TransmitBytes uint64 `json:"transmit_bytes"`
@@ -54,8 +60,6 @@ type Config struct {
 	Comparison Comparison `json:"comparison"`
 	Message    Message    `json:"message"`
 }
-
-const bytesToGB = 1024 * 1024 * 1024
 
 // Read the /proc/net/dev file to get network statistics for a specific interface
 func readNetworkStats(iface string) (NetStats, error) {
@@ -108,7 +112,7 @@ func checkReset(config *Config) bool {
 	currentTime := time.Now()
 
 	// Parse the last reset time from the config
-	lastReset, err := time.Parse("2006-01-02", config.Statistics.LastReset)
+	lastReset, err := time.Parse(dateFormat, config.Statistics.LastReset)
 	if err != nil {
 		// If there's an error parsing the last reset, assume we need to reset
 		return true
@@ -129,15 +133,10 @@ func checkReset(config *Config) bool {
 	resetDate := time.Date(currentTime.Year(), currentTime.Month(), resetDay, 0, 0, 0, 0, time.Local)
 
 	// If the last reset was before the current reset date and now is after or on the reset date, reset statistics
-	if lastReset.Before(resetDate) && currentTime.After(resetDate) {
-		return true
-	}
-
-	return false
+	return lastReset.Before(resetDate) && currentTime.After(resetDate)
 }
 
 // Reset statistics and also reset the Telegram status flags
-// func resetStatistics(config *Config) {
 func resetStatistics(config *Config, configFilePath string) {
 	//fmt.Println("Resetting statistics and Telegram statuses for new month period")
 	// Reset statistics
@@ -145,7 +144,7 @@ func resetStatistics(config *Config, configFilePath string) {
 	config.Statistics.TotalTransmit = 0
 
 	// Reset the last reset date
-	config.Statistics.LastReset = time.Now().Format("2006-01-02")
+	config.Statistics.LastReset = time.Now().Format(dateFormat)
 
 	// Reset Telegram status flags
 	config.Message.Telegram.ThresholdStatus = false
@@ -153,8 +152,7 @@ func resetStatistics(config *Config, configFilePath string) {
 
 	// Save the reset config
 	//err := saveConfig("config.json", *config)
-	err := saveConfig(configFilePath, *config)
-	if err != nil {
+	if err := saveConfig(configFilePath, *config); err != nil {
 		fmt.Printf("Failed to save config after reset in resetStatistics: %v\n", err)
 	}
 }
@@ -170,15 +168,10 @@ func sendTelegramMessage(token, chatID, message, device string) error {
 	jsonBody, _ := json.Marshal(body)
 
 	_, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return fmt.Errorf("failed to send message to Telegram: %v", err)
-	}
-
-	return nil
+	return err
 }
 
 // Perform comparison based on category and thresholds
-// func performComparison(config *Config) error {
 func performComparison(config *Config, configFilePath string) error {
 	var valueInGB float64
 
@@ -200,8 +193,7 @@ func performComparison(config *Config, configFilePath string) error {
 	if valueInGB >= thresholdLimit && !config.Message.Telegram.ThresholdStatus {
 		//fmt.Println("大于阈值，发送消息")
 		message := fmt.Sprintf("流量提醒：当前使用量为 %.2f GB，超过了设置的%.0f%%阈值", valueInGB, config.Comparison.Threshold*100)
-		err := sendTelegramMessage(config.Message.Telegram.Token, config.Message.Telegram.ChatID, message, config.Device)
-		if err != nil {
+		if err := sendTelegramMessage(config.Message.Telegram.Token, config.Message.Telegram.ChatID, message, config.Device); err != nil {
 			fmt.Printf("Failed to compare thresholdLimit: %v\n", err)
 		} else {
 			//fmt.Println("阈值发送成功，修改状态")
@@ -209,8 +201,7 @@ func performComparison(config *Config, configFilePath string) error {
 
 			// Save the updated config to the file
 			//err = saveConfig("config.json", *config)
-			err = saveConfig(configFilePath, *config)
-			if err != nil {
+			if err := saveConfig(configFilePath, *config); err != nil {
 				fmt.Printf("Failed to save config in thresholdLimit: %v\n", err)
 			}
 		}
@@ -220,8 +211,7 @@ func performComparison(config *Config, configFilePath string) error {
 	if valueInGB >= ratioLimit && !config.Message.Telegram.RatioStatus {
 		//fmt.Println("大于比率，发送消息")
 		message := fmt.Sprintf("关机警告：当前使用量 %.2f GB，超过了限制的%.0f%%，即将关机！", valueInGB, config.Comparison.Ratio*100)
-		err := sendTelegramMessage(config.Message.Telegram.Token, config.Message.Telegram.ChatID, message, config.Device)
-		if err != nil {
+		if err := sendTelegramMessage(config.Message.Telegram.Token, config.Message.Telegram.ChatID, message, config.Device); err != nil {
 			fmt.Printf("Failed to compare ratioLimit: %v\n", err)
 		} else {
 			//fmt.Println("警告发送成功，修改状态")
@@ -229,8 +219,7 @@ func performComparison(config *Config, configFilePath string) error {
 
 			// Save the updated config to the file
 			//err = saveConfig("config.json", *config)
-			err = saveConfig(configFilePath, *config)
-			if err != nil {
+			if err := saveConfig(configFilePath, *config); err != nil {
 				fmt.Printf("Failed to save config in ratioLimit: %v\n", err)
 			}
 
@@ -238,9 +227,7 @@ func performComparison(config *Config, configFilePath string) error {
 			time.Sleep(30 * time.Second)
 
 			// Execute shutdown command
-			cmd := exec.Command("shutdown", "-h", "now")
-			err := cmd.Run()
-			if err != nil {
+			if err := exec.Command("shutdown", "-h", "now").Run(); err != nil {
 				fmt.Printf("Failed to execute shutdown command: %v\n", err)
 			}
 		}
@@ -267,8 +254,7 @@ func main() {
 	}
 
 	// Check if the interface exists
-	_, err = readNetworkStats(config.Interface)
-	if err != nil {
+	if _, err := readNetworkStats(config.Interface); err != nil {
 		fmt.Printf("Error checking interface existing: %v\n", err)
 		return
 	}
@@ -276,7 +262,7 @@ func main() {
 	// Use the interval defined in config.json
 	interval := config.Interval
 	if interval == 0 {
-		interval = 600 // Default to 600 seconds if not specified
+		interval = defaultInterval // Default to 600 seconds if not specified
 	}
 
 	for {
@@ -312,8 +298,7 @@ func main() {
 		config.Statistics.LastTransmit = stats.TransmitBytes
 
 		// Save the updated config to the file
-		err = saveConfig(*configFilePath, config)
-		if err != nil {
+		if err := saveConfig(*configFilePath, config); err != nil {
 			fmt.Printf("Failed to update stats to config: %v\n", err)
 		}
 
@@ -324,8 +309,7 @@ func main() {
 
 		// Perform comparison and check for warnings
 		//err = performComparison(&config)
-		err = performComparison(&config, *configFilePath)
-		if err != nil {
+		if err := performComparison(&config, *configFilePath); err != nil {
 			fmt.Printf("Comparison error: %v\n", err)
 		}
 
